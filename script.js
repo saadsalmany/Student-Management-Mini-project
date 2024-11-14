@@ -20,58 +20,43 @@ const deleteModal = document.getElementById('deleteModal');
 const formTitle = document.getElementById('formTitle');
 const submitBtn = document.getElementById('submitBtn');
 
-// Toggle Forms
-document.getElementById('showSignup').addEventListener('click', () => {
-    document.getElementById('loginForm').parentElement.classList.add('hidden');
-    document.getElementById('signupFormContainer').classList.remove('hidden');
-});
 
-document.getElementById('showLogin').addEventListener('click', () => {
-    document.getElementById('signupFormContainer').classList.add('hidden');
-    document.getElementById('loginForm').parentElement.classList.remove('hidden');
-});
-
-// Auth Functions
-loginForm.addEventListener('submit', (e) => {
+/// Admin Credentials
+const adminCredentials = [
+    { userId: 'admin', password: 'admin' },
+  ];
+  
+  // Auth Functions
+  loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    const email = document.getElementById('loginEmail').value;
+    const userId = document.getElementById('loginUserId').value;
     const password = document.getElementById('loginPassword').value;
-
-    // Simple authentication (in real app, this would connect to a backend)
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    const user = users.find(u => u.email === email && u.password === password);
-
-    if (user) {
-        currentUser = user;
+  
+    // Check if the entered credentials match the admin credentials
+    const isAdmin = adminCredentials.find((cred) => cred.userId === userId && cred.password === password);
+  
+    if (isAdmin) {
+      // Log the admin in
+      let currentUser = { userId, isAdmin: true, name: 'Admin' }; // Declare let
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      showDashboard();
+      showToast('success', 'Admin login successful!');
+    } else {
+      // Check regular user credentials
+      const users = JSON.parse(localStorage.getItem('users')) || [];
+      const user = users.find((u) => u.userId === userId && u.password === password);
+  
+      if (user) {
+        let currentUser = user; // Declare let
         localStorage.setItem('currentUser', JSON.stringify(user));
         showDashboard();
         showToast('success', 'Login successful!');
-    } else {
+      } else {
         showToast('error', 'Invalid credentials!');
+      }
     }
-});
+  });
 
-signupForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const name = document.getElementById('signupName').value;
-    const email = document.getElementById('signupEmail').value;
-    const password = document.getElementById('signupPassword').value;
-
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    
-    if (users.some(u => u.email === email)) {
-        showToast('error', 'Email already exists!');
-        return;
-    }
-
-    const newUser = { name, email, password };
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-    
-    showToast('success', 'Account created successfully!');
-    signupForm.classList.add('hidden');
-    loginForm.classList.remove('hidden');
-});
 
 // Dashboard Functions
 function showDashboard() {
@@ -84,10 +69,16 @@ function showDashboard() {
 
 function updateDashboardStats() {
     document.getElementById('totalStudents').textContent = students.length;
+  
     const departments = new Set(students.map(s => s.department));
     document.getElementById('totalDepartments').textContent = departments.size;
-    document.getElementById('totalClasses').textContent = Math.ceil(students.length / 30); // Assuming 30 students per class
-}
+  
+    const activeCourses = new Set(students.map(s => `${s.department}-${s.semester}`));
+    document.getElementById('activeCourses').textContent = activeCourses.size;
+  }
+  
+  // Call the updateDashboardStats function periodically, e.g. every 5 seconds
+  setInterval(updateDashboardStats, 5000);
 
 // Student Management Functions
 studentForm.addEventListener('submit', (e) => {
@@ -355,7 +346,21 @@ document.getElementById('cancelDelete').addEventListener('click', () => {
     currentStudentId = null;
 });
 
-// Initialize
+// Initialize// ...
+
+signupForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  
+  // Your signup form validation code...
+  
+  // After successful signup, navigate to the login page
+  loginForm.parentElement.classList.remove('hidden');
+  signupFormContainer.classList.add('hidden');
+  
+  showToast('success', 'Account created successfully!');
+});
+
+// ...
 if (currentUser) {
     showDashboard();
 }
