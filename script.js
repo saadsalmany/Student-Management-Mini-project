@@ -1,11 +1,9 @@
-// Initialize data storage
 let students = JSON.parse(localStorage.getItem('students')) || [];
-let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+var currentUser = JSON.parse(localStorage.getItem('currentUser')) || JSON.parse(localStorage.getItem('currentUser'));
 let currentPage = 1;
 const itemsPerPage = 5;
 let currentStudentId = null;
 
-// DOM Elements
 const authContainer = document.getElementById('authContainer');
 const dashboardContainer = document.getElementById('dashboardContainer');
 const loginForm = document.getElementById('loginForm');
@@ -20,34 +18,35 @@ const deleteModal = document.getElementById('deleteModal');
 const formTitle = document.getElementById('formTitle');
 const submitBtn = document.getElementById('submitBtn');
 
-
-/// Admin Credentials
+if (currentUser) {
+    showDashboard();
+}
 const adminCredentials = [
     { userId: 'admin', password: 'admin' },
   ];
   
-  // Auth Functions
   loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    const userId = document.getElementById('loginUserId').value;
-    const password = document.getElementById('loginPassword').value;
+    const userId = document.getElementById('loginUserId').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
   
-    // Check if the entered credentials match the admin credentials
+    if (!userId || !password) {
+      showToast('error', 'Please enter both username and password!');
+      return;
+    }
+  
     const isAdmin = adminCredentials.find((cred) => cred.userId === userId && cred.password === password);
   
     if (isAdmin) {
-      // Log the admin in
-      let currentUser = { userId, isAdmin: true, name: 'Admin' }; // Declare let
+      currentUser = { userId, isAdmin: true, name: 'Admin' };
       localStorage.setItem('currentUser', JSON.stringify(currentUser));
       showDashboard();
       showToast('success', 'Admin login successful!');
     } else {
-      // Check regular user credentials
       const users = JSON.parse(localStorage.getItem('users')) || [];
       const user = users.find((u) => u.userId === userId && u.password === password);
-  
+    
       if (user) {
-        let currentUser = user; // Declare let
         localStorage.setItem('currentUser', JSON.stringify(user));
         showDashboard();
         showToast('success', 'Login successful!');
@@ -58,7 +57,6 @@ const adminCredentials = [
   });
 
 
-// Dashboard Functions
 function showDashboard() {
     authContainer.classList.add('hidden');
     dashboardContainer.classList.remove('hidden');
@@ -77,10 +75,8 @@ function updateDashboardStats() {
     document.getElementById('activeCourses').textContent = activeCourses.size;
   }
   
-  // Call the updateDashboardStats function periodically, e.g. every 5 seconds
   setInterval(updateDashboardStats, 5000);
 
-// Student Management Functions
 studentForm.addEventListener('submit', (e) => {
     e.preventDefault();
     
@@ -98,12 +94,10 @@ studentForm.addEventListener('submit', (e) => {
     };
 
     if (currentStudentId) {
-        // Update existing student
         const index = students.findIndex(s => s.id === currentStudentId);
         students[index] = studentData;
         showToast('success', 'Student updated successfully!');
     } else {
-        // Add new student
         students.push(studentData);
         showToast('success', 'Student added successfully!');
     }
@@ -123,11 +117,9 @@ function resetForm() {
 
 document.getElementById('clearBtn').addEventListener('click', resetForm);
 
-// Student List Management
 function renderStudents() {
     let filteredStudents = students;
 
-    // Apply search filter
     const searchTerm = searchInput.value.toLowerCase();
     if (searchTerm) {
         filteredStudents = filteredStudents.filter(student => 
@@ -137,7 +129,6 @@ function renderStudents() {
         );
     }
 
-    // Apply department filter
     const departmentFilter = filterDepartment.value;
     if (departmentFilter) {
         filteredStudents = filteredStudents.filter(student => 
@@ -145,13 +136,11 @@ function renderStudents() {
         );
     }
 
-    // Pagination
     const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
     const paginatedStudents = filteredStudents.slice(start, end);
 
-    // Update table
     studentsTableBody.innerHTML = paginatedStudents.map(student => `
         <tr class="hover:bg-gray-50">
             <td class="px-6 py-4">${student.name}</td>
@@ -174,12 +163,10 @@ function renderStudents() {
         </tr>
     `).join('');
 
-    // Update pagination info
     document.getElementById('startCount').textContent = start + 1;
     document.getElementById('endCount').textContent = Math.min(end, filteredStudents.length);
     document.getElementById('totalCount').textContent = filteredStudents.length;
 
-    // Update pagination buttons
     updatePagination(totalPages);
 }
 
@@ -202,7 +189,6 @@ function updatePagination(totalPages) {
     document.getElementById('nextPage').disabled = currentPage === totalPages;
 }
 
-// Student Actions
 function viewStudent(id) {
     const student = students.find(s => s.id === id);
     if (student) {
@@ -247,14 +233,12 @@ function showDeleteConfirmation(id) {
     deleteModal.classList.add('flex');
 }
 
-// Toast Notification
 function showToast(type, message) {
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toastMessage');
     const toastIcon = document.getElementById('toastIcon');
     const toastContainer = document.getElementById('toastContainer');
 
-    // Set toast style based on type
     let bgColor, iconHtml;
     switch (type) {
         case 'success':
@@ -274,21 +258,16 @@ function showToast(type, message) {
     toastIcon.innerHTML = iconHtml;
     toastMessage.textContent = message;
 
-    // Show toast
     toast.classList.remove('hidden');
 
-    // Hide toast after 3 seconds
     setTimeout(() => {
         toast.classList.add('hidden');
         
-        // Remove toast after animation completes
         setTimeout(() => {
-            // Optional: reset toast position
-        }, 300); // matches transition duration
+        }, 300); 
     }, 2000);
 }
 
-// Event Listeners
 searchInput.addEventListener('input', () => {
     currentPage = 1;
     renderStudents();
@@ -346,21 +325,17 @@ document.getElementById('cancelDelete').addEventListener('click', () => {
     currentStudentId = null;
 });
 
-// Initialize// ...
 
 signupForm.addEventListener('submit', (e) => {
   e.preventDefault();
   
-  // Your signup form validation code...
   
-  // After successful signup, navigate to the login page
   loginForm.parentElement.classList.remove('hidden');
   signupFormContainer.classList.add('hidden');
   
   showToast('success', 'Account created successfully!');
 });
 
-// ...
 if (currentUser) {
     showDashboard();
 }
