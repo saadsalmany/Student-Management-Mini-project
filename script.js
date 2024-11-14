@@ -22,13 +22,13 @@ const submitBtn = document.getElementById('submitBtn');
 
 // Toggle Forms
 document.getElementById('showSignup').addEventListener('click', () => {
-    loginForm.classList.add('hidden');
-    signupForm.classList.remove('hidden');
+    document.getElementById('loginForm').parentElement.classList.add('hidden');
+    document.getElementById('signupFormContainer').classList.remove('hidden');
 });
 
 document.getElementById('showLogin').addEventListener('click', () => {
-    signupForm.classList.add('hidden');
-    loginForm.classList.remove('hidden');
+    document.getElementById('signupFormContainer').classList.add('hidden');
+    document.getElementById('loginForm').parentElement.classList.remove('hidden');
 });
 
 // Auth Functions
@@ -284,17 +284,17 @@ function showToast(type, message) {
     toastMessage.textContent = message;
 
     // Show toast
-    toast.classList.remove('translate-x-full');
+    toast.classList.remove('hidden');
 
     // Hide toast after 3 seconds
     setTimeout(() => {
-        toast.classList.add('translate-x-full');
+        toast.classList.add('hidden');
         
         // Remove toast after animation completes
         setTimeout(() => {
             // Optional: reset toast position
         }, 300); // matches transition duration
-    }, 3000);
+    }, 2000);
 }
 
 // Event Listeners
