@@ -261,6 +261,7 @@ function showToast(type, message) {
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toastMessage');
     const toastIcon = document.getElementById('toastIcon');
+    const toastContainer = document.getElementById('toastContainer');
 
     // Set toast style based on type
     let bgColor, iconHtml;
@@ -278,12 +279,21 @@ function showToast(type, message) {
             iconHtml = '<i class="fas fa-info-circle text-white"></i>';
     }
 
-    toast.className = `fixed top-4 right-4 z-50 ${bgColor} text-white p-4 rounded-lg shadow-lg transform translate-x-0 transition-transform duration-300`;
+    toastContainer.className = `flex items-center p-4 rounded-lg shadow-lg ${bgColor} text-white`;
     toastIcon.innerHTML = iconHtml;
     toastMessage.textContent = message;
 
+    // Show toast
+    toast.classList.remove('translate-x-full');
+
+    // Hide toast after 3 seconds
     setTimeout(() => {
         toast.classList.add('translate-x-full');
+        
+        // Remove toast after animation completes
+        setTimeout(() => {
+            // Optional: reset toast position
+        }, 300); // matches transition duration
     }, 3000);
 }
 
