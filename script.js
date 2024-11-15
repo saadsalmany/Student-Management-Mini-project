@@ -142,32 +142,68 @@ function renderStudents() {
     const paginatedStudents = filteredStudents.slice(start, end);
 
     studentsTableBody.innerHTML = paginatedStudents.map(student => `
-        <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4">${student.name}</td>
-            <td class="px-6 py-4">${student.rollNumber}</td>
-            <td class="px-6 py-4">${student.department}</td>
-            <td class="px-6 py-4">${student.semester}</td>
-            <td class="px-6 py-4">${student.email}</td>
-            <td class="px-6 py-4">${student.phone}</td>
-            <td class="px-6 py-4">
-                <button onclick="viewStudent('${student.id}')" class="text-blue-600 hover:text-blue-800 mr-2">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button onclick="editStudent('${student.id}')" class="text-green-600 hover:text-green-800 mr-2">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button onclick="showDeleteConfirmation('${student.id}')" class="text-red-600 hover:text-red-800">
-                    <i class="fas fa-trash"></i>
-                </button>
+        <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center">
+                        <span class="text-sm font-medium text-gray-600">${student.name.charAt(0)}</span>
+                    </div>
+                    <div class="ml-4">
+                        <div class="text-sm font-medium text-gray-900">${student.name}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${student.rollNumber}</td>
+            <td class="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900">${student.department}</td>
+            <td class="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900">${student.semester}</td>
+            <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900">${student.email}</td>
+            <td class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900">${student.phone}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <div class="flex justify-end space-x-3">
+                    <button onclick="viewStudent('${student.id}')" 
+                            class="text-blue-600 hover:text-blue-800 transition-colors">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button onclick="editStudent('${student.id}')" 
+                            class="text-green-600 hover:text-green-800 transition-colors">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="showDeleteConfirmation('${student.id}')" 
+                            class="text-red-600 hover:text-red-800 transition-colors">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </td>
         </tr>
     `).join('');
 
-    document.getElementById('startCount').textContent = start + 1;
+    // Update pagination info
+    document.getElementById('startCount').textContent = filteredStudents.length ? start + 1 : 0;
     document.getElementById('endCount').textContent = Math.min(end, filteredStudents.length);
     document.getElementById('totalCount').textContent = filteredStudents.length;
 
-    updatePagination(totalPages);
+    // Update pagination controls
+    const pageNumbers = document.getElementById('pageNumbers');
+    pageNumbers.innerHTML = '';
+    
+    for (let i = 1; i <= totalPages; i++) {
+        const button = document.createElement('button');
+        button.className = `px-3 py-1 border rounded-lg transition-colors ${
+            currentPage === i 
+                ? 'bg-blue-600 text-white border-blue-600' 
+                : 'hover:bg-gray-50 text-gray-700 border-gray-200'
+        }`;
+        button.textContent = i;
+        button.onclick = () => {
+            currentPage = i;
+            renderStudents();
+        };
+        pageNumbers.appendChild(button);
+    }
+
+    // Update navigation buttons
+    document.getElementById('prevPage').disabled = currentPage === 1;
+    document.getElementById('nextPage').disabled = currentPage === totalPages;
 }
 
 function updatePagination(totalPages) {
@@ -339,3 +375,129 @@ signupForm.addEventListener('submit', (e) => {
 if (currentUser) {
     showDashboard();
 }
+
+
+// CSV Import/Export Functions
+function exportToCSV() {
+    if (students.length === 0) {
+        showToast('error', 'No students to export!');
+        return;
+    }
+
+    // Define CSV headers
+    const headers = [
+        'Name',
+        'Date of Birth',
+        'Gender',
+        'Roll Number',
+        'Department',
+        'Semester',
+        'Email',
+        'Phone',
+        'Address'
+    ];
+
+    // Convert students data to CSV format
+    const csvData = students.map(student => [
+        student.name,
+        student.dateOfBirth,
+        student.gender,
+        student.rollNumber,
+        student.department,
+        student.semester,
+        student.email,
+        student.phone,
+        student.address
+    ]);
+
+    // Combine headers and data
+    const csvContent = [
+        headers,
+        ...csvData
+    ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `students_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('success', 'Students data exported successfully!');
+}
+
+function importFromCSV(file) {
+    const reader = new FileReader();
+    
+    reader.onload = function(event) {
+        try {
+            const csvData = event.target.result;
+            const rows = csvData.split('\n');
+            
+            // Remove header row and empty rows
+            const dataRows = rows.slice(1).filter(row => row.trim());
+            
+            const importedStudents = dataRows.map(row => {
+                // Handle quoted values properly
+                const values = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g)
+                    .map(val => val.replace(/^"(.*)"$/, '$1'));
+                
+                return {
+                    id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                    name: values[0],
+                    dateOfBirth: values[1],
+                    gender: values[2],
+                    rollNumber: values[3],
+                    department: values[4],
+                    semester: values[5],
+                    email: values[6],
+                    phone: values[7],
+                    address: values[8]
+                };
+            });
+
+            // Validate imported data
+            const invalidEntries = importedStudents.filter(student => 
+                !student.name || !student.rollNumber || !student.email
+            );
+
+            if (invalidEntries.length > 0) {
+                showToast('error', 'Invalid data format in CSV file!');
+                return;
+            }
+
+            // Add imported students to existing list
+            students = [...students, ...importedStudents];
+            localStorage.setItem('students', JSON.stringify(students));
+            updateDashboardStats();
+            renderStudents();
+            showToast('success', `${importedStudents.length} students imported successfully!`);
+            
+        } catch (error) {
+            console.error('Error importing CSV:', error);
+            showToast('error', 'Error importing CSV file. Please check the format.');
+        }
+    };
+
+    reader.onerror = function() {
+        showToast('error', 'Error reading the file');
+    };
+
+    reader.readAsText(file);
+}
+
+// Handle file input change
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        if (file.type !== 'text/csv') {
+            showToast('error', 'Please select a CSV file');
+            return;
+        }
+        importFromCSV(file);
+    }
+}
+
